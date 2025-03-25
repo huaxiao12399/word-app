@@ -3,40 +3,51 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { text } = req.body;
-  if (!text) {
-    return res.status(400).json({ error: 'Text is required' });
-  }
-
   try {
-    const TTS_API_URL = "https://texttospeech.googleapis.com/v1/text:synthesize";
-    const API_KEY = process.env.GEMINI_API_KEY;
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required' });
+    }
 
-    const response = await fetch(`${TTS_API_URL}?key=${API_KEY}`, {
+    const subscription_key = process.env.AZURE_SPEECH_KEY;
+    const region = process.env.AZURE_SPEECH_REGION || 'eastasia';
+    const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
+
+    if (!subscription_key) {
+      throw new Error('Azure Speech API key is not configured');
+    }
+
+    const ssml = `
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+    <voice name="en-GB-SoniaNeural">
+        <prosody rate="0%" pitch="0%">
+            ${text}
+        </prosody>
+    </voice>
+</speak>`;
+
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Ocp-Apim-Subscription-Key': subscription_key,
+        'Content-Type': 'application/ssml+xml',
+        'X-Microsoft-OutputFormat': 'audio-24khz-160kbitrate-mono-mp3'
       },
-      body: JSON.stringify({
-        input: { text },
-        voice: { languageCode: 'en-US', name: 'en-US-Neural2-D', ssmlGender: 'NEUTRAL' },
-        audioConfig: { 
-          audioEncoding: 'MP3',
-          speakingRate: 1.0,
-          pitch: 0.0,
-          volumeGainDb: 0.0
-        }
-      })
+      body: ssml
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`Azure Speech API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    res.json(data);
+    const audioBuffer = await response.arrayBuffer();
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.send(Buffer.from(audioBuffer));
   } catch (error) {
-    console.error('TTS API Error:', error);
-    res.status(500).json({ error: 'Failed to generate speech' });
+    console.error('TTS Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to generate speech',
+      details: error.message 
+    });
   }
-}
+} 
