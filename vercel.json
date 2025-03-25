@@ -3,6 +3,7 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/api/search", "dest": "/api/word" },
+    { "src": "/api/tts", "dest": "/api/tts" },
     { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
