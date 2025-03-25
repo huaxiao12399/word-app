@@ -311,6 +311,8 @@
   </div>
 
   <script>
+    const API_URL = "https://generativelanguage.googleapis.com/v1beta";
+    
     const searchButton = document.getElementById('searchButton');
     const wordInput = document.getElementById('wordInput');
     const resultDiv = document.getElementById('result');
@@ -327,12 +329,48 @@
       searchButton.disabled = true;
 
       try {
-        const response = await fetch('/api/word', {
+        const prompt = `请以JSON格式返回以下单词信息：
+{
+  "word": "${word}",
+  "phonetic": "标准英式音标（包含音节分界符号'.'、重读符号'ˈ'和次重读符号'ˌ'，如果没有斜杠符号'/'请添加）",
+  "syllables": [
+    {
+      "text": "音节1",
+      "phonetic": "音节1音标（如果没有斜杠符号'/'请添加）"
+    },
+    {
+      "text": "音节2",
+      "phonetic": "音节2音标（如果没有斜杠符号'/'请添加）"
+    }
+  ],
+  "meanings": [
+    {
+      "partOfSpeech": "词性",
+      "definitions": ["中文释义1", "中文释义2"]
+    }
+  ]
+}
+
+注意事项：
+- 使用英式音标
+- 如果是单音节词，syllables数组只包含一个元素
+- 每个音节的text是字母形式，phonetic是对应的音标
+- 词性使用英文缩写：n., v., adj., adv., prep., conj., pron., num., art., int.
+- 每个词性最多返回3个最常用中文释义
+- 严格按照JSON格式返回，不要添加额外说明`;
+        
+        const payload = {
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        };
+
+        const response = await fetch(`/api/search`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ word })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -375,25 +413,39 @@
 
     async function playAudio(text) {
       try {
-        if (!('speechSynthesis' in window)) {
-          throw new Error('您的浏览器不支持语音合成功能');
+        if ('speechSynthesis' in window) {
+          return new Promise((resolve, reject) => {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            utterance.onend = () => resolve();
+            utterance.onerror = (event) => reject(new Error('Web Speech API播放失败'));
+            
+            window.speechSynthesis.speak(utterance);
+          });
         }
-
-        return new Promise((resolve, reject) => {
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'en-US';
-          utterance.rate = 1.0;
-          utterance.pitch = 1.0;
-          utterance.volume = 1.0;
-          
-          utterance.onend = () => resolve();
-          utterance.onerror = (event) => reject(new Error('语音播放失败'));
-          
-          window.speechSynthesis.speak(utterance);
-        });
+        throw new Error('您的浏览器不支持语音合成');
       } catch (error) {
         console.error('Error playing audio:', error);
-        showError(error.message);
+
+        if (retryCount < maxRetries) {
+          console.log(`Retrying audio playback (${retryCount + 1}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          return playAudio(text, retryCount + 1);
+        }
+
+        let errorMessage = '发音播放失败';
+        if (error.message.includes('429')) {
+          errorMessage = '请求过于频繁，请稍后再试';
+        } else if (error.message.includes('403')) {
+          errorMessage = '请先启用Google Cloud Text-to-Speech API服务';
+        } else if (error.message.includes('503')) {
+          errorMessage = '服务暂时不可用，请稍后再试';
+        }
+        showError(errorMessage);
       }
     }
 
