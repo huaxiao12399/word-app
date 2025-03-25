@@ -29,7 +29,8 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      throw new Error(`API请求失败: ${response.status} ${errorData ? JSON.stringify(errorData) : ''}`);
     }
 
     const data = await response.json();
@@ -42,6 +43,6 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ error: 'Failed to fetch word information' });
+    res.status(500).json({ error: error.message || '获取单词信息失败' });
   }
-} 
+}
