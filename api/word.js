@@ -3,16 +3,18 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { word } = req.body;
-  if (!word) {
-    return res.status(400).json({ error: 'Word is required' });
-  }
-
   try {
     const API_URL = "https://generativelanguage.googleapis.com/v1beta";
     const API_KEY = process.env.GEMINI_API_KEY;
 
+    if (!API_KEY) {
+      throw new Error('API key is not configured');
+    }
+
     const payload = req.body;
+    if (!payload.contents || !payload.contents[0]?.parts?.[0]?.text) {
+      return res.status(400).json({ error: 'Invalid request format' });
+    }
 
     const response = await fetch(`${API_URL}/models/gemini-2.0-flash:generateContent?key=${API_KEY}`, {
       method: 'POST',
@@ -23,6 +25,8 @@ export default async function handler(req, res) {
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Gemini API Error:', errorData);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -36,6 +40,9 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ error: 'Failed to fetch word information' });
+    res.status(500).json({ 
+      error: 'Failed to fetch word information',
+      details: error.message 
+    });
   }
 }
