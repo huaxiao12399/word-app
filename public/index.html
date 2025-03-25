@@ -2,69 +2,329 @@
 <html>
 <head>
   <title>Word Info</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 0 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f8f9fa;
     }
-    .input-group {
-      margin: 20px 0;
+
+    .container {
+      background-color: white;
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      font-size: 1.75rem;
+      font-weight: 600;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+    }
+
     input {
-      padding: 8px;
+      flex: 1;
+      padding: 10px 16px;
       font-size: 16px;
-      width: 200px;
+      border: 2px solid #e9ecef;
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.3s ease;
     }
+
+    input:focus {
+      border-color: #4dabf7;
+      box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.1);
+    }
+
     button {
-      padding: 8px 16px;
+      padding: 10px 20px;
       font-size: 16px;
-      background-color: #4CAF50;
+      background-color: #4dabf7;
       color: white;
       border: none;
+      border-radius: 12px;
       cursor: pointer;
+      transition: all 0.3s ease;
     }
+
     button:hover {
-      background-color: #45a049;
+      background-color: #339af0;
+      transform: translateY(-1px);
     }
-    #result {
-      margin-top: 20px;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      white-space: pre-wrap;
-    }
-    .loading {
-      opacity: 0.5;
+
+    button:disabled {
+      background-color: #ced4da;
       cursor: not-allowed;
+      transform: none;
+    }
+
+    .result {
+      margin-top: 1.5rem;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .word-info {
+      display: none;
+    }
+
+    .word-info.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .word-section {
+      padding: 1.5rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-bottom: 1px solid #dee2e6;
+    }
+
+    .word {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.5px;
+    }
+
+    .pronunciation-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .pronunciation-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+
+    .phonetic {
+      color: #e03131;
+      font-size: 1.1rem;
+      font-family: Arial, sans-serif;
+      font-weight: 500;
+    }
+
+    .audio-button {
+      background: none;
+      border: none;
+      color: #4dabf7;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 1.1rem;
+      transition: transform 0.2s ease;
+    }
+
+    .audio-button:hover {
+      color: #339af0;
+      transform: scale(1.1);
+    }
+
+    .syllables {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .syllable-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.6rem;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+      min-width: 60px;
+    }
+
+    .syllable-text {
+      color: #6c757d;
+      font-size: 1rem;
+      font-weight: 400;
+    }
+
+    .syllable-phonetic {
+      color: #e03131;
+      font-family: Arial, sans-serif;
+      font-size: 0.85rem;
+    }
+
+    .meaning-section {
+      padding: 1.5rem;
+      background: #fff;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .meaning-item {
+      position: relative;
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 1rem;
+      overflow: hidden;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .meaning-item:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .pos-tag {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: #e7f5ff;
+      color: #1971c2;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .meaning-text {
+      color: #495057;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #868e96;
+      background: #f8f9fa;
+      border-radius: 12px;
+      font-size: 0.9rem;
+    }
+
+    .error {
+      color: #e03131;
+      padding: 1.5rem;
+      border-radius: 12px;
+      background-color: #fff5f5;
+      text-align: center;
+      font-size: 0.9rem;
+      border: 1px solid #ffe3e3;
+    }
+
+    @media (max-width: 480px) {
+      .word-section {
+        padding: 1.25rem;
+      }
+
+      .word {
+        font-size: 1.8rem;
+      }
+
+      .pronunciation-wrapper {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .pronunciation-item {
+        padding: 0.2rem 0.6rem;
+      }
+
+      .phonetic {
+        font-size: 1rem;
+      }
+
+      .audio-button {
+        font-size: 1rem;
+      }
+
+      .meaning-section {
+        padding: 1.25rem;
+      }
+
+      .meaning-text {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Word Information</h1>
-  <div class="input-group">
-    <input type="text" id="wordInput" placeholder="Enter a word">
-    <button id="searchButton">Search</button>
+  <div class="container">
+    <h1>单词助手</h1>
+    <div class="search-box">
+      <input type="text" id="wordInput" placeholder="请输入要查询的单词..." autofocus>
+      <button id="searchButton">查询</button>
+    </div>
+    <div id="result" class="result">
+      <div class="word-info">
+        <div class="word-section">
+          <div class="word"></div>
+          <div class="pronunciation-wrapper">
+            <div class="pronunciation-item">
+              <span class="phonetic"></span>
+              <button class="audio-button" title="播放发音">🔊</button>
+            </div>
+          </div>
+          <div class="syllables"></div>
+        </div>
+        <div class="meaning-section"></div>
+      </div>
+    </div>
   </div>
-  <div id="result"></div>
 
   <script>
     const searchButton = document.getElementById('searchButton');
     const wordInput = document.getElementById('wordInput');
     const resultDiv = document.getElementById('result');
+    const wordInfo = document.querySelector('.word-info');
 
-    searchButton.addEventListener('click', async () => {
+    async function searchWord() {
       const word = wordInput.value.trim();
       if (!word) {
-        resultDiv.textContent = 'Please enter a word';
+        showError('请输入要查询的单词');
         return;
       }
 
-      // 添加加载状态
+      showLoading();
       searchButton.disabled = true;
-      searchButton.classList.add('loading');
-      resultDiv.textContent = 'Loading...';
 
       try {
         const response = await fetch('/api/word', {
@@ -80,21 +340,187 @@
         }
 
         const data = await response.json();
-        resultDiv.textContent = data.result || data.error || 'No result';
+        console.log('API Response:', data);
+        
+        if (data.candidates && data.candidates.length > 0) {
+          const responseText = data.candidates[0].content.parts[0].text;
+          console.log('Raw Response Text:', responseText);
+          try {
+            // 提取JSON字符串（去除可能的前后文本）
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);            
+            if (!jsonMatch) {
+              throw new Error('返回格式错误');
+            }
+            const wordData = JSON.parse(jsonMatch[0]);
+            console.log('Parsed Word Data:', wordData);
+            displayResult(wordData);
+          } catch (error) {
+            console.error('解析错误:', error);
+            throw new Error('数据格式错误');
+          }
+        } else {
+          throw new Error('未找到单词信息');
+        }
       } catch (error) {
-        console.error('Error:', error);
-        resultDiv.textContent = `Error: ${error.message}`;
+        console.error('Error Details:', {
+          message: error.message,
+          stack: error.stack,
+          response: error.response
+        });
+        showError(error.message);
       } finally {
-        // 移除加载状态
         searchButton.disabled = false;
-        searchButton.classList.remove('loading');
       }
-    });
+    }
 
-    // 添加回车键支持
+    async function playAudio(text) {
+      try {
+        if (!('speechSynthesis' in window)) {
+          throw new Error('您的浏览器不支持语音合成功能');
+        }
+
+        return new Promise((resolve, reject) => {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'en-US';
+          utterance.rate = 1.0;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+          
+          utterance.onend = () => resolve();
+          utterance.onerror = (event) => reject(new Error('语音播放失败'));
+          
+          window.speechSynthesis.speak(utterance);
+        });
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        showError(error.message);
+      }
+    }
+
+    function displayResult(data) {
+      // 验证数据格式
+      if (!data || typeof data !== 'object') {
+        throw new Error('无效的数据格式');
+      }
+
+      if (!data.word || !data.phonetic || !data.syllables || !Array.isArray(data.meanings)) {
+        throw new Error('数据格式不完整');
+      }
+
+      // 创建或获取必要的DOM元素
+      let wordInfo = document.querySelector('.word-info');
+      if (!wordInfo) {
+        wordInfo = document.createElement('div');
+        wordInfo.className = 'word-info';
+        wordInfo.innerHTML = `
+          <div class="word-section">
+            <div class="word"></div>
+            <div class="pronunciation-wrapper">
+              <div class="pronunciation-item">
+                <span class="phonetic"></span>
+                <button class="audio-button" title="播放发音">🔊</button>
+              </div>
+            </div>
+            <div class="syllables"></div>
+          </div>
+          <div class="meaning-section"></div>
+        `;
+      }
+
+      const wordDiv = wordInfo.querySelector('.word');
+      const phoneticSpan = wordInfo.querySelector('.phonetic');
+      const syllablesDiv = wordInfo.querySelector('.syllables');
+      const meaningSection = wordInfo.querySelector('.meaning-section');
+
+      // 显示单词
+      wordDiv.textContent = data.word;
+      // 确保音标有斜杠符号
+      let phonetic = data.phonetic;
+      if (!phonetic.startsWith('/')) {
+        phonetic = '/' + phonetic;
+      }
+      if (!phonetic.endsWith('/')) {
+        phonetic = phonetic + '/';
+      }
+      phoneticSpan.textContent = phonetic;
+
+      // 显示音节
+      syllablesDiv.innerHTML = '';
+      data.syllables.forEach(syllable => {
+        const syllableBlock = document.createElement('div');
+        syllableBlock.className = 'syllable-block';
+        
+        const syllableText = document.createElement('div');
+        syllableText.className = 'syllable-text';
+        syllableText.textContent = syllable.text;
+        
+        const syllablePhonetic = document.createElement('div');
+        syllablePhonetic.className = 'syllable-phonetic';
+        // 确保音节音标有斜杠符号
+        let syllablePhoneticText = syllable.phonetic;
+        if (!syllablePhoneticText.startsWith('/')) {
+          syllablePhoneticText = '/' + syllablePhoneticText;
+        }
+        if (!syllablePhoneticText.endsWith('/')) {
+          syllablePhoneticText = syllablePhoneticText + '/';
+        }
+        syllablePhonetic.textContent = syllablePhoneticText;
+        
+        syllableBlock.appendChild(syllableText);
+        syllableBlock.appendChild(syllablePhonetic);
+        syllablesDiv.appendChild(syllableBlock);
+      });
+      
+
+      // 显示释义
+      meaningSection.innerHTML = '';
+      data.meanings.forEach(meaning => {
+        if (!meaning.partOfSpeech || !Array.isArray(meaning.definitions)) {
+          return;
+        }
+
+        const meaningItem = document.createElement('div');
+        meaningItem.className = 'meaning-item';
+
+        const posTag = document.createElement('div');
+        posTag.className = 'pos-tag';
+        posTag.textContent = meaning.partOfSpeech;
+
+        const meaningText = document.createElement('div');
+        meaningText.className = 'meaning-text';
+        meaningText.textContent = meaning.definitions.join('；');
+
+        meaningItem.appendChild(posTag);
+        meaningItem.appendChild(meaningText);
+        meaningSection.appendChild(meaningItem);
+      });
+
+      wordInfo.classList.add('active');
+      resultDiv.innerHTML = '';
+      resultDiv.appendChild(wordInfo);
+
+      // 添加发音按钮点击事件
+      const audioButton = wordInfo.querySelector('.audio-button');
+      audioButton.addEventListener('click', () => playAudio(data.word));
+    }
+
+      // 添加发音按钮点击事件
+      const audioButton = wordInfo.querySelector('.audio-button');
+      audioButton.addEventListener('click', () => playAudio(data.word));
+    
+
+    function showError(message) {
+      resultDiv.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    function showLoading() {
+      resultDiv.innerHTML = '<div class="loading">正在查询中...</div>';
+    }
+
+    searchButton.addEventListener('click', searchWord);
     wordInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter' && !searchButton.disabled) {
-        searchButton.click();
+        searchWord();
       }
     });
   </script>
