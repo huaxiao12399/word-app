@@ -380,12 +380,10 @@
         const data = await response.json();
         console.log('API Response:', data);
         
-        if (data.candidates && data.candidates.length > 0) {
-          const responseText = data.candidates[0].content.parts[0].text;
-          console.log('Raw Response Text:', responseText);
+        if (data.result) {
           try {
             // 提取JSON字符串（去除可能的前后文本）
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);            
+            const jsonMatch = data.result.match(/\{[\s\S]*\}/);            
             if (!jsonMatch) {
               throw new Error('返回格式错误');
             }
@@ -397,7 +395,7 @@
             throw new Error('数据格式错误');
           }
         } else {
-          throw new Error('未找到单词信息');
+          throw new Error(data.error || '未找到单词信息');
         }
       } catch (error) {
         console.error('Error Details:', {
@@ -405,7 +403,7 @@
           stack: error.stack,
           response: error.response
         });
-        showError(error.message);
+        showError(error.message || '请求失败，请稍后重试');
       } finally {
         searchButton.disabled = false;
       }
@@ -555,11 +553,6 @@
       const audioButton = wordInfo.querySelector('.audio-button');
       audioButton.addEventListener('click', () => playAudio(data.word));
     }
-
-      // 添加发音按钮点击事件
-      const audioButton = wordInfo.querySelector('.audio-button');
-      audioButton.addEventListener('click', () => playAudio(data.word));
-    
 
     function showError(message) {
       resultDiv.innerHTML = `<div class="error">${message}</div>`;
