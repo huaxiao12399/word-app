@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Word Info</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    .input-group {
+      margin: 20px 0;
+    }
+    input {
+      padding: 8px;
+      font-size: 16px;
+      width: 200px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
+    .loading {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Word Information</h1>
+  <div class="input-group">
+    <input type="text" id="wordInput" placeholder="Enter a word">
+    <button id="searchButton">Search</button>
+  </div>
+  <div id="result"></div>
+
+  <script>
+    const searchButton = document.getElementById('searchButton');
+    const wordInput = document.getElementById('wordInput');
+    const resultDiv = document.getElementById('result');
+
+    searchButton.addEventListener('click', async () => {
+      const word = wordInput.value.trim();
+      if (!word) {
+        resultDiv.textContent = 'Please enter a word';
+        return;
+      }
+
+      // 添加加载状态
+      searchButton.disabled = true;
+      searchButton.classList.add('loading');
+      resultDiv.textContent = 'Loading...';
+
+      try {
+        const response = await fetch('/api/word', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ word })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        resultDiv.textContent = data.result || data.error || 'No result';
+      } catch (error) {
+        console.error('Error:', error);
+        resultDiv.textContent = `Error: ${error.message}`;
+      } finally {
+        // 移除加载状态
+        searchButton.disabled = false;
+        searchButton.classList.remove('loading');
+      }
+    });
+
+    // 添加回车键支持
+    wordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !searchButton.disabled) {
+        searchButton.click();
+      }
+    });
+  </script>
+</body>
+</html>
